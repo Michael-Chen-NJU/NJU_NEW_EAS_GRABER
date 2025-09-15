@@ -3,6 +3,21 @@ global_time_gap = 1000 // ms 抢课间隔
 let global_studentCode = JSON.parse(sessionStorage.studentInfo).code;
 let global_electiveBatch = "";
 
+function encryptVolunteerData(jsonObj) {
+    const AVY_KEY = window.avy;
+    const jsonStr = typeof jsonObj === 'string' ? jsonObj : JSON.stringify(jsonObj);
+    const dataWithTimestamp = jsonStr + "?timestrap=" + Date.parse(new Date());
+    
+    return CryptoJS.AES.encrypt(
+        CryptoJS.enc.Utf8.parse(dataWithTimestamp),
+        CryptoJS.enc.Utf8.parse(AVY_KEY),
+        { 
+            mode: CryptoJS.mode.ECB, 
+            padding: CryptoJS.pad.Pkcs7 
+        }
+    ).toString();
+}
+
 function get_electiveBatchCode(studentCode=global_studentCode) { //获取选课轮次
     let data = JSON.parse(sessionStorage.studentInfo);
     let electiveBatch_list = data.electiveBatchList;
@@ -10,7 +25,7 @@ function get_electiveBatchCode(studentCode=global_studentCode) { //获取选课�
         console.log(`${electiveBatch_list[electiveBatch].name} : ${electiveBatch_list[electiveBatch].code}`);
     }
     global_studentCode = data.code;
-    global_electiveBatch = electiveBatch_list[0].code; //默认为第一个轮次
+    global_electiveBatch = electiveBatch_list[1].code; //默认为第一个轮次
 }
 
 function get_favorite_and_grab(grab_func, studentCode=global_studentCode, electiveBatchCode=global_electiveBatch) { //获取收藏列表
@@ -66,18 +81,24 @@ function grab(teachingClassId, courseKind, teachingClassType, studentCode=global
         阅读:    "courseKind":"8","teachingClassType":"YD"
     */
     status_clear(studentCode);
+    const rawData = {
+        data: {
+            operationType: "1",
+            studentCode: studentCode,
+            electiveBatchCode: electiveBatchCode,
+            teachingClassId: teachingClassId,
+            courseKind: courseKind,
+            teachingClassType: teachingClassType
+        }
+    };
+    const encryptedData = encryptVolunteerData(JSON.stringify(rawData));
     $.ajax(
         {
             url : "https://xk.nju.edu.cn/xsxkapp/sys/xsxkapp/elective/volunteer.do",
             type :"post",
             headers : {"token":sessionStorage.token},
-            data: {"addParam": `{"data":{` +
-                `"operationType" : "1",` +
-                `"studentCode" : "${studentCode}",` +
-                `"electiveBatchCode" : "${electiveBatchCode}",` +
-                `"teachingClassId" : "${teachingClassId}",` +
-                `"courseKind": "${courseKind}",` +
-                `"teachingClassType":"${teachingClassType}"}}`
+            data: {
+                addParam: encryptedData  // 使用加密后的数据
             },
             success:function(data){
                 console.log(data);
