@@ -25,7 +25,7 @@ function get_electiveBatchCode(studentCode=global_studentCode) { //获取选课�
         console.log(`${electiveBatch_list[electiveBatch].name} : ${electiveBatch_list[electiveBatch].code}`);
     }
     global_studentCode = data.code;
-    global_electiveBatch = electiveBatch_list[1].code; //默认为第一个轮次
+    global_electiveBatch = electiveBatch_list[0].code; //默认为第一个轮次
 }
 
 function get_favorite_and_grab(grab_func, studentCode=global_studentCode, electiveBatchCode=global_electiveBatch) { //获取收藏列表
