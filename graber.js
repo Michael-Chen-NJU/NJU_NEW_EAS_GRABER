@@ -3,6 +3,14 @@ global_time_gap = 1000 // ms 抢课间隔
 let global_studentCode = JSON.parse(sessionStorage.studentInfo).code;
 let global_electiveBatch = "";
 
+// 新增：手动课程列表
+let manual_course_list = [{
+  teachingClassID: "",
+  courseKind: "1",
+  teachingClassType: "ZY",
+}]; // 形如 [{ teachingClassId:"...", courseKind:"1", teachingClassType:"ZY", electiveBatchCode:"...", studentCode:"..." }, ...]
+
+
 function encryptVolunteerData(jsonObj) {
     const AVY_KEY = window.avy;
     const jsonStr = typeof jsonObj === 'string' ? jsonObj : JSON.stringify(jsonObj);
@@ -25,7 +33,7 @@ function get_electiveBatchCode(studentCode=global_studentCode) { //获取选课�
         console.log(`${electiveBatch_list[electiveBatch].name} : ${electiveBatch_list[electiveBatch].code}`);
     }
     global_studentCode = data.code;
-    global_electiveBatch = electiveBatch_list[0].code; //默认为第一个轮次
+    global_electiveBatch = electiveBatch_list[1].code; //默认为第二个轮次
 }
 
 function get_favorite_and_grab(grab_func, studentCode=global_studentCode, electiveBatchCode=global_electiveBatch) { //获取收藏列表
@@ -45,14 +53,17 @@ function get_favorite_and_grab(grab_func, studentCode=global_studentCode, electi
                     `"order":"isChoose -"}`
             },
             success:function(data) {
-                let course_list = data.dataList;
-                grab_func(course_list);
+                let course_list = data.dataList || [];
+                // 将手动列表与收藏列表合并
+                const merged = course_list.concat(manual_course_list);
+                grab_func(merged);
             }
         }
     );
 }
 
 function print_favorite() { // 打印收藏列表，获取课程编码，轮次，courseKind, teachingClassType，等信息
+    get_electiveBatchCode();
     get_favorite_and_grab((course_list) => {
         console.log(course_list)
     });
